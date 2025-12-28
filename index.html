@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>CORTIS OFFICIAL</title>
+    <style>
+        :root {
+            --main-color: #CCFF00;
+        }
+
+        body {
+
+            
+
+            margin: 0;
+            background: #000;
+            color: #fff;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+        }
+
+        /* --- 背景层 --- */
+        #photoSlider {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            background: #000;
+        }
+
+        #photoSlider img {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 1.2s ease-in-out;
+        }
+
+        #photoSlider img.active { opacity: 1; }
+
+        #bgVideo {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            opacity: 0;
+            transition: 0.8s;
+            object-fit: cover;
+            /* 35% 让人物在画面中位置更舒服，不会顶头 */
+            object-position: center 35%;
+            background-color: #000; /* 确保视频容器本身是黑的 */
+        }
+
+        /* --- 侧边导航 (Logo + 按钮) --- */
+        .nav {
+            position: absolute;
+            left: 40px; /* 全局左侧边距基准 */
+            top: 60px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            z-index: 10;
+        }
+
+        .logo-btn {
+            width: 120px; /* 稍微大一点更霸气 */
+            margin-bottom: 25px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .logo-btn:hover { transform: scale(1.05); }
+        .logo-btn img { width: 100%; height: auto; }
+
+        .nav button {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 15px 20px;
+            cursor: pointer;
+            font-size: 13px;
+            letter-spacing: 2px;
+            transition: 0.4s;
+            width: 180px; /* 统一宽度 */
+            text-align: left;
+            backdrop-filter: blur(5px);
+            position: relative;
+    overflow: hidden;
+    transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .nav button:hover {
+            background: var(--main-color);
+            color: #000;
+            padding-left: 35px;
+            box-shadow: 0 0 20px var(--main-color); /* 增加发光感 */
+        }
+
+        /* --- 成员名字区 (左下角修复版) --- */
+        .content {
+            position: absolute;
+            left: 40px;      /* 关键：与侧边栏对齐，解决“奇怪感” */
+            bottom: 60px;    /* 距离底部适当留白 */
+            z-index: 5;
+            text-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+            pointer-events: none;
+            text-align: left;
+            display: flex;
+    flex-direction: column;
+        }
+
+        /* 在名字下方加一条窄窄的装饰线 */
+#mName::after {
+    content: "";
+    display: block;
+    width: 40px; /* 初始宽度 */
+    height: 4px;
+    background: var(--main-color);
+    margin: 15px 0;
+   transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1), background 0.4s;
+}
+
+/* 当内容显现时，线段伸长 */
+.content.show #mName::after {
+    width: 140px;
+}
+
+/* 语音跳动动画 */
+@keyframes wave {
+    0%, 100% { transform: scaleY(1); }
+    50% { transform: scaleY(3); }
+}
+
+.content.speaking #mName::after {
+    animation: wave 0.2s infinite ease-in-out;
+    background: #fff !important; /* 说话时横线变白 */
+    transform-origin: bottom;
+}
+
+/* 2. 优化副标题的呼吸感 */
+#mRole {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.6em; /* 让字母排得更开，更有呼吸感 */
+    text-transform: uppercase;
+    opacity: 0.8;
+    margin-top: 10px;
+    color: #fff;
+    /* 切换时的微弱淡入 */
+    transition: opacity 0.5s ease;
+}
+
+        h1 {
+            font-size: 70px; /* 名字大一点更有张力 */
+            margin: 0;
+            color: var(--main-color);
+            font-weight: 900;
+            line-height: 0.85;
+            text-transform: uppercase;
+            letter-spacing: -2px;
+        }
+
+        h3 {
+            font-size: 14px;
+            margin: 10px 0 0 2px;
+            letter-spacing: 4px;
+            color: rgba(255, 255, 255, 0.8);
+            text-transform: uppercase;
+        }
+
+        /* --- 右侧档案卡 --- */
+        .info-card {
+            position: absolute;
+            right: -350px;
+            top: 0;
+            width: 320px;
+            height: 100vh;
+            background: linear-gradient(to left, rgba(0, 0, 0, 0.95), rgba(0, 0, 0, 0.6));
+            backdrop-filter: blur(15px);
+            padding: 120px 40px;
+            box-sizing: border-box;
+            z-index: 8;
+            transition: 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+            border-right: 6px solid var(--main-color);
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+        }
+
+        .info-card.active { right: 0; }
+
+        .info-item h4 {
+            color: var(--main-color);
+            font-size: 11px;
+            margin: 0 0 10px 0;
+            letter-spacing: 2px;
+        }
+
+        .info-item .data-text {
+            font-size: 24px;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        /* --- 新增：档案卡内容交错动画 --- */
+.info-item {
+    opacity: 0;
+    transform: translateX(30px);
+    transition: all 0.4s ease-out; /* 这里的过渡要比外壳快一点 */
+}
+
+/* 当父级卡片 active 时，子项归位 */
+.info-card.active .info-item {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* 为 4 个项目设置不同的延迟时间，营造“排队”感 */
+.info-card.active .info-item:nth-child(1) { transition-delay: 0.2s; }
+.info-card.active .info-item:nth-child(2) { transition-delay: 0.3s; }
+.info-card.active .info-item:nth-child(3) { transition-delay: 0.4s; }
+.info-card.active .info-item:nth-child(4) { transition-delay: 0.5s; }
+
+        /* --- 开场动画样式 --- */
+#intro-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    z-index: 9999; /* 确保在最顶层 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 0.8s ease;
+}
+
+#intro-logo {
+    width: 300px; /* 初始巨大状态 */
+    filter: drop-shadow(0 0 20px var(--main-color));
+    animation: logo-entrance 2.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 核心动画：缩放并移动 */
+@keyframes logo-entrance {
+    0% {
+        opacity: 0;
+        transform: scale(0.5);
+        filter: brightness(0);
+    }
+    30% {
+        opacity: 1;
+        transform: scale(1.1);
+        filter: brightness(1.2) drop-shadow(0 0 30px var(--main-color));
+    }
+    60% {
+        transform: scale(1);
+    }
+    100% {
+        /* 这里的位置需要根据你的 Logo 最终位置微调 */
+        /* 这里的坐标是大概值，JS 会在动画结束后让它消失并显示真实 Logo */
+        opacity: 0; 
+        transform: scale(0.3) translateY(-100px);
+    }
+}
+
+/* 预设让导航和内容先隐藏，等开场结束再浮现 */
+.nav, .content {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: 1s all ease 0.5s; /* 延迟 2s 显示 */
+}
+
+.nav.show, .content.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+ /* 视频切换时的过渡效果 */
+.video-fade {
+    opacity: 0 !important;
+    transition: opacity 0.4s ease-in-out;
+}
+
+#bg-video {
+    /* 确保原视频也有基础过渡 */
+    transition: opacity 0.6s ease-in-out;
+}
+
+/* --- 1. Logo 呼吸灯特效 --- */
+.logo-btn img {
+    filter: drop-shadow(0 0 5px var(--main-color));
+    animation: logo-glow 3s infinite alternate ease-in-out;
+}
+
+@keyframes logo-glow {
+    from { filter: drop-shadow(0 0 5px var(--main-color)); opacity: 0.8; }
+    to { filter: drop-shadow(0 0 15px var(--main-color)); opacity: 1; }
+}
+
+/* --- 2. 电视机关机特效：视频消失时的动画 --- */
+.tv-off {
+    animation: tv-shutdown 0.4s cubic-bezier(0.23, 1, 0.32, 1) forwards !important;
+}
+
+@keyframes tv-shutdown {
+    0% { transform: scale(1, 1); filter: brightness(1); opacity: 1; }
+    50% { transform: scale(1, 0.02); filter: brightness(2); opacity: 0.8; }
+    100% { transform: scale(0, 0.02); filter: brightness(5); opacity: 0; }
+}
+
+
+/* =========================================
+   手机端适配 (屏幕宽度小于 768px)
+   ========================================= */
+@media (max-width: 768px) {
+    /* 1. 调整 Logo：放在顶部中心 */
+    .nav {
+        top: 20px;
+        left:10px;
+        width: 100%;
+        align-items: center;
+        padding: 0 20px;
+    }
+
+    .logo-btn {
+        width: 80px;
+        margin-bottom: 0;
+        position: fixed;
+        top: 30px;
+        left: 20px;
+    }
+
+    /* 2. 导航按钮：移至底部，横向排列并允许滑动 */
+    .nav {
+        position: fixed;
+        top: auto;
+        bottom: 0;
+        flex-direction: row; /* 横向排列 */
+        gap: 10px;
+        padding: 15px 20px 30px; /* 留出手机底部安全区 */
+        background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+        overflow-x: auto; /* 核心：开启横向滑动 */
+        white-space: nowrap;
+        scrollbar-width: none; /* 隐藏火狐滚动条 */
+    }
+    
+    .nav::-webkit-scrollbar { display: none; } /* 隐藏 Chrome 滚动条 */
+
+    .nav button {
+        width: auto; /* 宽度随文字自动 */
+        flex-shrink: 0; /* 禁止按钮被挤压 */
+        padding: 12px 20px;
+        font-size: 12px;
+    }
+
+    /* 3. 名字内容区：上移，防止被底部菜单遮挡 */
+    .content {
+        left: 20px;
+        bottom: 120px; /* 抬高位置 */
+    }
+
+    h1 {
+        font-size: 45px; /* 手机端字体缩小 */
+    }
+
+    /* 4. 档案卡：改为底部向上弹出的“抽屉” */
+    .info-card {
+        width: 100%;
+        height: 50vh; /* 占屏幕一半高 */
+        right: 0;
+        top: auto;
+        bottom: -55vh; /* 默认藏在屏幕下方 */
+        border-right: none;
+        border-top: 5px solid var(--main-color);
+        background: linear-gradient(to top, rgba(0,0,0,0.95), rgba(0,0,0,0.8));
+        padding: 40px 30px;
+        flex-direction: row;
+        flex-wrap: wrap; /* 内容自动换行 */
+        gap: 20px;
+    }
+
+    .info-card.active {
+        bottom: 0; /* 激活时滑上来 */
+        right: 0;
+    }
+
+    .info-item {
+        width: calc(50% - 10px); /* 一行显示两个 */
+    }
+}
+
+    </style>
+</head>
+
+<body>
+
+    <div id="intro-overlay">
+    <img src="assets/img/logo.png" id="intro-logo" alt="CORTIS">
+</div>
+
+
+    <div id="photoSlider">
+        <img src="assets/img/team1.png" class="active">
+        <img src="assets/img/team2.png">
+        <img src="assets/img/team3.png">
+    </div>
+
+    <video id="bgVideo" autoplay muted loop></video>
+
+    <div class="nav">
+        <div class="logo-btn" onclick="resetToTeam()">
+            <img src="assets/img/logo.png" alt="CORTIS">
+        </div>
+        <button onclick="changeMember('martin', event)">MARTIN</button>
+        <button onclick="changeMember('james', event)">JAMES</button>
+        <button onclick="changeMember('juhoon', event)">JUHOON</button>
+        <button onclick="changeMember('seonghyeon', event)">SEONGHYEON</button>
+        <button onclick="changeMember('keonho', event)">KEONHO</button>
+    </div>
+
+    <div id="infoCard" class="info-card">
+        <div class="info-item"><h4>BIRTHDAY</h4><div id="dBirthday" class="data-text">-</div></div>
+        <div class="info-item"><h4>CONSTELLATION</h4><div id="dConst" class="data-text">-</div></div>
+        <div class="info-item"><h4>MBTI</h4><div id="dMbti" class="data-text">-</div></div>
+        <div class="info-item"><h4>ANIMAL</h4><div id="dAnimal" class="data-text">-</div></div>
+    </div>
+
+    <div class="content">
+        <h1 id="mName">CORTIS</h1>
+        <h3 id="mRole">BEYOND THE STAGE</h3>
+    </div>
+
+    <script>
+       const video = document.getElementById('bgVideo');
+const infoCard = document.getElementById('infoCard');
+const photos = document.querySelectorAll('#photoSlider img');
+let currentPhotoIndex = 0;
+let sliderTimer = null;
+let currentVoice = null; // 确保这行代码在这里，它是控制语音的关键
+
+// 2. 【就在这里！】把 typeWriter 函数粘贴进来
+    function typeWriter(element, text, speed = 50) {
+        element.innerText = '';
+        let i = 0;
+        // 清除可能存在的旧定时器，防止文字重叠
+        if (element.timer) clearInterval(element.timer);
+        
+        element.timer = setInterval(() => {
+            if (i < text.length) {
+                element.innerText += text.charAt(i);
+                i++;
+            } else {
+                clearInterval(element.timer);
+            }
+        }, speed);
+    }
+
+// 自动轮播逻辑
+function startSlider() {
+    if (sliderTimer) return;
+    sliderTimer = setInterval(() => {
+        if (window.getComputedStyle(video).opacity === "0") {
+            photos[currentPhotoIndex].classList.remove('active');
+            currentPhotoIndex = (currentPhotoIndex + 1) % photos.length;
+            photos[currentPhotoIndex].classList.add('active');
+        }
+    }, 4000);
+}
+startSlider();
+
+const memberData = {
+    martin: { birth: '2008.03.20', const: '双鱼座', mbti: 'INFP', animal: '灵缇犬 🐕‍🦺', color: '#CCFF00' },
+    james: { birth: '2005.10.14', const: '天秤座', mbti: 'INTP', animal: '鹰 🦅', color: '#A020F0' },
+    juhoon: { birth: '2008.01.03', const: '摩羯座', mbti: 'ISFP', animal: '乌龟 🐢', color: '#00BFFF' },
+    seonghyeon: { birth: '2009.01.13', const: '摩羯座', mbti: 'INTP', animal: '狐狸 🦊', color: '#FF4500' },
+    keonho: { birth: '2009.02.14', const: '水瓶座', mbti: 'INTP', animal: '小狗 🐶', color: '#FFD700' }
+};
+
+// --- 优化后的语音播放（带淡入） ---
+function playMemberVoice(key) {
+    if (currentVoice) { 
+        currentVoice.pause(); 
+        currentVoice.currentTime = 0;
+    }
+    
+    currentVoice = new Audio(`assets/audio/${key}.mp3`);
+    currentVoice.volume = 0; // 起始音量绝对为0
+
+    currentVoice.onplay = () => {
+        document.querySelector('.content').classList.add('speaking');
+        
+        let targetVolume = 0.7; // 稍微调低上限，更显高级
+        let duration = 900;    // 拉长到 1.5 秒淡入，极其温柔
+        let startTime = performance.now();
+
+        function fade() {
+            let now = performance.now();
+            let elapsed = now - startTime;
+            let progress = Math.min(elapsed / duration, 1);
+            
+            // --- 核心改动：指数级曲线 ---
+            // 使用 progress 的平方，让音量从小到大的过程更顺滑，不会突然“跳”出来
+            currentVoice.volume = Math.pow(progress, 2) * targetVolume;
+
+            if (progress < 1) {
+                requestAnimationFrame(fade);
+            }
+        }
+        requestAnimationFrame(fade);
+    };
+
+    currentVoice.onended = () => document.querySelector('.content').classList.remove('speaking');
+    currentVoice.play().catch(e => console.log("Audio play blocked"));
+}
+async function changeMember(key, e) {
+    // 【新增】清除关机动画残留
+    video.classList.remove('tv-off');
+    // 按钮样式切换
+    document.querySelectorAll('.nav button').forEach(btn => {
+        btn.style.background = 'rgba(0,0,0,0.5)';
+        btn.style.color = '#fff';
+    });
+    e.currentTarget.style.background = 'var(--main-color)';
+    e.currentTarget.style.color = '#000';
+
+    const localD = memberData[key];
+    
+    // 加载视频与语音
+    video.src = `assets/video/${key}.mp4`;
+    video.style.opacity = '1';
+    video.style.zIndex = '1';
+    video.play();
+
+    setTimeout(() => { 
+        playMemberVoice(key); 
+    }, 200);
+
+    // 更新文字和主题色
+    document.getElementById('mName').innerText = key.toUpperCase();
+    document.getElementById('dBirthday').innerText = localD.birth;
+    document.getElementById('dConst').innerText = localD.const;
+    document.getElementById('dMbti').innerText = localD.mbti;
+    document.getElementById('dAnimal').innerText = localD.animal;
+    document.documentElement.style.setProperty('--main-color', localD.color);
+
+    infoCard.classList.add('active');
+}
+
+function resetToTeam() {
+
+// 1. 【新增】重置所有导航按钮的样式
+    document.querySelectorAll('.nav button').forEach(btn => {
+        btn.style.background = 'rgba(0,0,0,0.5)'; // 变回半透明黑
+        btn.style.color = '#fff';                // 文字变白
+    });
+
+    // 1. 立即停止语音并移除律动条
+    if (currentVoice) { 
+        currentVoice.pause(); 
+        currentVoice.currentTime = 0; 
+    }
+    // 2. 【核心修改】立即移除跳动效果，让白线变回绿线并静止
+    document.querySelector('.content').classList.remove('speaking');
+
+// --- 电视关机核心逻辑 ---
+    // 1. 给视频加上“关机”动画类
+   // video.classList.add('tv-off');
+
+// 3. 动画结束后（400ms）彻底隐藏视频并重置
+    setTimeout(() => {
+        video.style.opacity = 0;
+        video.style.zIndex = -1;
+        video.pause();
+        video.classList.remove('tv-off'); // 移除类名以便下次使用
+    }, 400);
+
+    //video.style.opacity = 0;
+    //video.style.zIndex = -1;
+    //video.pause();
+    // 4. 重置卡片和文字
+    infoCard.classList.remove('active');
+    document.getElementById('mName').innerText = "CORTIS";
+    document.getElementById('mRole').innerText = "BEYOND THE STAGE";
+  
+// 清空打字机文字
+    const dataFields = ['dBirthday', 'dConst', 'dMbti', 'dAnimal'];
+    dataFields.forEach(id => {
+        const el = document.getElementById(id);
+        if (el.timer) clearInterval(el.timer); // 停止正在进行的打字
+        el.innerText = '-';
+    });
+
+    document.documentElement.style.setProperty('--main-color', '#CCFF00');
+}
+
+// 开场动画逻辑
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        document.getElementById('intro-overlay').style.opacity = '0';
+        setTimeout(() => {
+            
+            document.getElementById('intro-overlay').style.display = 'none';
+            document.querySelector('.nav').classList.add('show');
+            document.querySelector('.content').classList.add('show');
+        }, 800);
+    }, 1200);
+});
+    </script>
+</body>
+
+</html>
