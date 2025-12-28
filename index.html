@@ -2,6 +2,7 @@
 <html lang="zh-CN">
 
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta charset="UTF-8">
     <title>CORTIS OFFICIAL</title>
     <style>
@@ -318,80 +319,53 @@
    手机端适配 (屏幕宽度小于 768px)
    ========================================= */
 @media (max-width: 768px) {
-    /* 1. 调整 Logo：放在顶部中心 */
+    /* 1. 让左侧按钮变小并稍微下移，避开 Logo */
     .nav {
-        top: 20px;
-        left:10px;
-        width: 100%;
-        align-items: center;
-        padding: 0 20px;
-    }
-
-    .logo-btn {
-        width: 80px;
-        margin-bottom: 0;
-        position: fixed;
-        top: 30px;
+        top: 100px; /* 避开左上角 Logo */
         left: 20px;
+        gap: 8px;
     }
-
-    /* 2. 导航按钮：移至底部，横向排列并允许滑动 */
-    .nav {
-        position: fixed;
-        top: auto;
-        bottom: 0;
-        flex-direction: row; /* 横向排列 */
-        gap: 10px;
-        padding: 15px 20px 30px; /* 留出手机底部安全区 */
-        background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
-        overflow-x: auto; /* 核心：开启横向滑动 */
-        white-space: nowrap;
-        scrollbar-width: none; /* 隐藏火狐滚动条 */
-    }
-    
-    .nav::-webkit-scrollbar { display: none; } /* 隐藏 Chrome 滚动条 */
-
     .nav button {
-        width: auto; /* 宽度随文字自动 */
-        flex-shrink: 0; /* 禁止按钮被挤压 */
-        padding: 12px 20px;
-        font-size: 12px;
+        width: 100px; /* 手机端按钮窄一点 */
+        padding: 10px;
+        font-size: 11px;
     }
+    .logo-btn { width: 70px; }
 
-    /* 3. 名字内容区：上移，防止被底部菜单遮挡 */
-    .content {
-        left: 20px;
-        bottom: 120px; /* 抬高位置 */
-    }
+    /* 2. 名字位置 */
+    .content { bottom: 40px; left: 20px; }
+    h1 { font-size: 38px; }
 
-    h1 {
-        font-size: 45px; /* 手机端字体缩小 */
-    }
-
-    /* 4. 档案卡：改为底部向上弹出的“抽屉” */
+    /* 3. 修复档案卡：改为全屏半透明遮罩，点击成员才出现 */
     .info-card {
         width: 100%;
-        height: 50vh; /* 占屏幕一半高 */
+        height: auto;
+        min-height: 30vh;
         right: 0;
         top: auto;
-        bottom: -55vh; /* 默认藏在屏幕下方 */
+        bottom: -100%; /* 初始藏在底部 */
+        left: 0;
         border-right: none;
-        border-top: 5px solid var(--main-color);
-        background: linear-gradient(to top, rgba(0,0,0,0.95), rgba(0,0,0,0.8));
-        padding: 40px 30px;
-        flex-direction: row;
-        flex-wrap: wrap; /* 内容自动换行 */
-        gap: 20px;
+        border-top: 4px solid var(--main-color);
+        background: rgba(0, 0, 0, 0.9); /* 加深背景，确保看清字 */
+        padding: 30px;
+        z-index: 99; /* 确保在最顶层 */
+        transition: 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        display: flex;
+        flex-direction: row; /* 手机端横向排两列 */
+        flex-wrap: wrap;
     }
 
+    /* 激活时滑上来 */
     .info-card.active {
-        bottom: 0; /* 激活时滑上来 */
-        right: 0;
+        bottom: 0;
     }
 
     .info-item {
-        width: calc(50% - 10px); /* 一行显示两个 */
+        width: 50%; /* 一行两个项目 */
+        margin-bottom: 20px;
     }
+    .info-item .data-text { font-size: 16px; }
 }
 
     </style>
